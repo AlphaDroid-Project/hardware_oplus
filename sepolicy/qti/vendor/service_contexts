@@ -1,3 +1,6 @@
+# Authentication service
+authentication_service                      u:object_r:oem_service:s0
+
 # Camera
 vendor.oplus.hardware.camera.aon.IAONService/default                     u:object_r:hal_oplus_aon_aidl_service:s0
 vendor.oplus.hardware.camera_rfi.ICameraRfiService/default               u:object_r:hal_camera_service:s0
@@ -26,6 +29,15 @@ vendor.pixelworks.hardware.display.IIris/default    u:object_r:hal_display_iris_
 
 # OLC
 vendor.oplus.hardware.olc2.IOplusLogCore/default    u:object_r:hal_oplus_olc_aidl_service:s0
+
+# HoraeService
+horae                                       u:object_r:oem_service:s0
+
+# OPLUSResourceManage service
+OplusResourceManagerService                 u:object_r:oem_service:s0
+
+# OPLUSoiface
+oplusoiface                                 u:object_r:oem_service:s0
 
 # OSENSE
 osensemanager                                                         u:object_r:osense_service:s0
