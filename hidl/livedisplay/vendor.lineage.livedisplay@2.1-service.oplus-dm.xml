@@ -4,13 +4,8 @@
         <transport>hwbinder</transport>
         <version>2.1</version>
         <interface>
-            <name>ISunlightEnhancement</name>
+            <name>IDisplayModes</name>
             <instance>default</instance>
         </interface>
-        <interface>
-            <name>IAntiFlicker</name>
-            <instance>default</instance>
-        </interface>
-        <fqname>@2.0::IPictureAdjustment/default</fqname>
     </hal>
 </manifest>
