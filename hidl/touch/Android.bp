@@ -20,7 +20,6 @@ cc_binary {
     defaults: [
         "hidl_defaults",
         "oplus_lineage_touch_hal_defaults",
-        "uses_oplus_touch_defaults",
     ],
     init_rc: ["vendor.lineage.touch@1.0-service.oplus.rc"],
     vintf_fragments: ["vendor.lineage.touch@1.0-service.oplus.xml"],
