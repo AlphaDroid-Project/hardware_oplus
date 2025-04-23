@@ -164,7 +164,7 @@
 /vendor/lib64/libipebpsstriping\.so                                             u:object_r:same_process_hal_file:s0
 
 # Charging
-/vendor/bin/hw/vendor\.lineage\.powershare@1\.0-service\.oplus    u:object_r:hal_lineage_powershare_default_exec:s0
+/vendor/bin/hw/vendor\.lineage\.powershare-service\.oplus    u:object_r:hal_lineage_powershare_default_exec:s0
 /sys/devices/platform/soc/soc:oplus,chg_intf/oplus_chg/usb/fastchg_status         u:object_r:vendor_sysfs_battery_supply:s0
 /sys/devices/platform/soc/soc:oplus,chg_intf/soc:oplus,chg_intf:oplus,wireless-charge/oplus_chg/wireless/fastchg_status u:object_r:vendor_sysfs_battery_supply:s0
 
