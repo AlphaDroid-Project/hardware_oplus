@@ -1,6 +1,9 @@
 # Battery Health
 r_dir_file(system_app, vendor_sysfs_usb_supply)
 
+# Charge bypass
+allow system_app vendor_sysfs_usb_supply:file w_file_perms;
+
 # Gamespace
 r_dir_file(system_app, vendor_sysfs_sde_crtc)
 
