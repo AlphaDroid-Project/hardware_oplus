@@ -26,18 +26,14 @@ int main() {
         const std::string instance = std::string(HighTouchPollingRate::descriptor) + "/default";
         const binder_status_t status =
                 AServiceManager_addService(htpr->asBinder().get(), instance.c_str());
-        if (status != STATUS_OK) {
-            LOG(WARNING) << "Can't register IHighTouchPollingRate/default";
-        }
+        CHECK_EQ(status, STATUS_OK) << "Failed to add service " << instance << " " << status;
     }
 
     if (tg) {
         const std::string instance = std::string(TouchscreenGesture::descriptor) + "/default";
         const binder_status_t status =
                 AServiceManager_addService(tg->asBinder().get(), instance.c_str());
-        if (status != STATUS_OK) {
-            LOG(WARNING) << "Can't register ITouchscreenGesture/default";
-        }
+        CHECK_EQ(status, STATUS_OK) << "Failed to add service " << instance << " " << status;
     }
 
     ABinderProcess_joinThreadPool();
