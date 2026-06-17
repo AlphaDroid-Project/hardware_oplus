@@ -4,18 +4,10 @@
 # Audio Amplifier
 /dev/aw882xx_smartpa    u:object_r:oplus_awsmartpa_device:s0
 
-# Camera
-/data/vendor/camera_update(/.*)?                                                u:object_r:vendor_camera_update_data_file:s0
+# Explorer
 /data/vendor/explorer(/.*)?                                                     u:object_r:vendor_explorer_data_file:s0
-/dev/camera_extension_monitor                                                   u:object_r:vendor_camera_turbo_device:s0
 /dev/explorer_preisp                                                            u:object_r:vendor_explorer_device:s0
-/mnt/vendor/persist/camera(/.*)?                                                u:object_r:vendor_persist_camera_file:s0
-/mnt/vendor/persist/dual_camera_calibration(/.*)?                               u:object_r:vendor_persist_camera_file:s0
 /mnt/vendor/persist/explorer(/.*)?                                              u:object_r:vendor_persist_explorer_file:s0
-/(odm|vendor/odm)/bin/hw/vendor\.oplus\.hardware\.cammidasservice-V1-service    u:object_r:hal_oplus_cammidasservice_aidl_exec:s0
-/vendor/bin/hw/vendor\.oplus\.hardware\.cameraMDM@1\.0-service                  u:object_r:vendor_hal_cameraMDM_default_exec:s0
-/vendor/bin/hw/vendor\.oplus\.hardware\.cameraMDM@2\.0-service                  u:object_r:vendor_hal_cameraMDM_default_exec:s0
-/vendor/lib64/libipebpsstriping(170)?\.so                                       u:object_r:same_process_hal_file:s0
 
 # Charging
 /dev/oplus_chg                                                               u:object_r:oplus_charger_device:s0
@@ -139,7 +131,6 @@
 /mnt/vendor/oplusreserve/connectivity/felicalock(/.*)?              u:object_r:oplus_reserve_connectivity_felicalock:s0
 /mnt/vendor/oplusreserve/connectivity/nfclock(/.*)?                 u:object_r:oplus_reserve_connectivity_felicalock:s0
 /mnt/vendor/oplusreserve/media(/.*)?                                u:object_r:oplus_reserve_media_file:s0
-/mnt/vendor/oplusreserve/media/Camera(/.*)?                         u:object_r:oplus_reserve_media_camera:s0
 /mnt/vendor/oplusreserve/media/ColorOS(/.*)?                        u:object_r:oppo_reserve_media_coloros:s0
 /mnt/vendor/oplusreserve/media/dropbox(/.*)?                        u:object_r:oplus_reserve_media_dropbox:s0
 /mnt/vendor/oplusreserve/media/engineermode(/.*)?                   u:object_r:oplus_reserve_media_engineermode:s0
