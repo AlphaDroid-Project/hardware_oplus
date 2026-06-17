@@ -1,8 +1,7 @@
 # Audio Amplifier
 type oplus_awsmartpa_device, dev_type;
 
-# Camera
-type vendor_camera_turbo_device, dev_type;
+# Explorer
 type vendor_explorer_device, dev_type;
 
 # Charging

@@ -1,12 +1,7 @@
 # Audio
 vendor.oplus.hardware.bluetooth_audio_extend::IBluetoothAudioProvidersFactory    u:object_r:hal_audio_hwservice:s0
 
-# Camera
-vendor.oplus.hardware.cameraextension::ICameraExtensionService         u:object_r:vendor_hal_camera_extension_hwservice:s0
-vendor.oplus.hardware.cameraMDM::IOPlusCameraMDM                       u:object_r:vendor_hal_cameraMDM_hwservice:s0
-vendor.oplus.hardware.cammidasservice::IMIDASService                   u:object_r:hal_camera_hwservice:s0
-vendor.oplus.hardware.sendextcamcmd::ISendExtCamCmdService             u:object_r:hal_camera_hwservice:s0
-vendor.qti.hardware.camera.cameraextension::ICameraExtensionService    u:object_r:vendor_hal_camera_extension_hwservice:s0
+# Explorer
 vendor.zeku.hardware.explorer::IMmsProvider                            u:object_r:vendor_hal_explorer_hwservice:s0
 
 # Charger
