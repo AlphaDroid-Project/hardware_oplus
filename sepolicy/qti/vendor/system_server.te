@@ -6,3 +6,7 @@ rw_dir_file(system_server, vendor_proc_wireless)
 rw_dir_file(system_server, vendor_sysfs_battery_supply)
 rw_dir_file(system_server, vendor_sysfs_usb_supply)
 rw_dir_file(system_server, vendor_proc_oplus_scheduler)
+
+# OPlus secure common and charger proc entries read by system_server
+r_dir_file(system_server, vendor_proc_oppo_secure_common_file)
+r_dir_file(system_server, vendor_proc_charger)
