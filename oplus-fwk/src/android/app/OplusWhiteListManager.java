@@ -14,5 +14,8 @@ public class OplusWhiteListManager {
 
     public void addStageProtectInfo(String pkg, long timeout) {}
 
+    // OplusCamera ApsService.onStop calls this 4-arg overload; missing → NoSuchMethodError crash.
+    public void addStageProtectInfo(String pkg, String reason, long timeout, com.oplus.app.IOplusProtectConnection connection) {}
+
     public void removeStageProtectInfo(String pkg) {}
 }
