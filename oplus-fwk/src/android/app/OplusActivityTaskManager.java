@@ -87,4 +87,10 @@ public class OplusActivityTaskManager extends OplusBaseActivityTaskManager imple
             reply.recycle();
         }
     }
+
+    // OplusCamera FloatingWindowDetectHelper.registerZoomWindowObserver references this;
+    // missing -> NoSuchMethodError (caught, disables zoom-window observe). Stub per dodge parity.
+    public boolean registerTaskInfoChangeListener(com.oplus.app.OplusTaskInfoChangeListener listener, int arg1, int arg2) {
+        return false;
+    }
 }

@@ -2,8 +2,12 @@ package android.hardware.camera2;
 
 import android.content.Context;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.IOplusCameraManager;
 import android.hardware.camera2.impl.CameraMetadataNative;
+import android.hardware.camera2.marshal.MarshalRegistry;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Binder;
@@ -357,6 +361,31 @@ public final class OplusCameraManager implements IOplusCameraManager {
             e.printStackTrace();
         }
         Log.i(TAG, "using reflection to visit detachImage method in ImageReader");
+    }
+
+    public static <T> T metaDataValueConvert(CaptureResult.Key<T> key, int i, byte[] bArr) {
+        final String TAG = "OplusCameraManager";
+        try {
+            T result = (T) MarshalRegistry.getMarshaler(key.getNativeKey().getTypeReference(), i)
+                    .unmarshal(ByteBuffer.wrap(bArr).order(ByteOrder.nativeOrder()));
+            Log.d(TAG, "metaDataValueConvert OK");
+            return result;
+        } catch (Throwable t) {
+            Log.e(TAG, "metaDataValueConvert FAIL");
+            throw t;
+        }
+    }
+
+    public static int getMetadataTag(CaptureResult.Key key) {
+        final String TAG = "OplusCameraManager";
+        try {
+            int tag = key.getNativeKey().getTag();
+            Log.d(TAG, "getMetadataTag OK");
+            return tag;
+        } catch (Throwable t) {
+            Log.e(TAG, "getMetadataTag FAIL");
+            throw t;
+        }
     }
 
     public static void setOmojiJson(String jsonInfo) {

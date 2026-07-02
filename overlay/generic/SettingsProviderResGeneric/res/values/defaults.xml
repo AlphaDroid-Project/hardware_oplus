@@ -8,4 +8,7 @@
     <!-- Set the automatic brightness mode on by default -->
     <bool name="def_screen_brightness_automatic_mode">true</bool>
 
+    <!-- Hidden api blacklist exemptions -->
+    <string name="def_hidden_api_blacklist_exemptions">Lcom/oplus/os/,Landroid/os/OplusManager</string>
+
 </resources>
