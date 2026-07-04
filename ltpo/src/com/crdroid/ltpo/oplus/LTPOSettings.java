@@ -45,6 +45,10 @@ public class LTPOSettings extends SettingsBasePreferenceFragment
 
     private static final String FILE_LTPO = "/sys/kernel/oplus_display/adfr_config";
 
+    // Panel devicetree default (oplus,adfr-config) for aston/astonc AA551:
+    // global | idle mode | oa bl mutual exclusion | high precision sa/oa/switch
+    private static final String LTPO_ENABLE_MASK = "0xe51";
+
     private SwitchPreferenceCompat mLTPOSwitch;
 
     @Override
@@ -71,7 +75,7 @@ public class LTPOSettings extends SettingsBasePreferenceFragment
             boolean enabled = (Boolean) newValue;
             SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
             sharedPrefs.edit().putBoolean(KEY_LTPO_SWITCH, enabled).apply();
-    	    Utils.writeValue(FILE_LTPO, enabled ? "0x109f" : "0x0");
+    	    Utils.writeValue(FILE_LTPO, enabled ? LTPO_ENABLE_MASK : "0x0");
             return true;
         }
 
@@ -84,7 +88,7 @@ public class LTPOSettings extends SettingsBasePreferenceFragment
             String current = Utils.getFileValue(FILE_LTPO, "0x0");
             boolean enabled = !"0x0".equals(current != null ? current.trim() : null);
             boolean value = sharedPrefs.getBoolean(KEY_LTPO_SWITCH, enabled);
-            Utils.writeValue(FILE_LTPO, value ? "0x109f" : "0x0");
+            Utils.writeValue(FILE_LTPO, value ? LTPO_ENABLE_MASK : "0x0");
         }
     }
 }
