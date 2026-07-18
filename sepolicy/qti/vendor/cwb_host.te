@@ -1,0 +1,33 @@
+# cwb-host — hosts the stock vendor.oplus.hardware.cwb@1.0::ICwbService that on
+# ColorOS lives inside the display composer. It does what the composer's CWB
+# code does: register the hwbinder service (under its own hal_cwb_hwservice
+# label (hal_cwb_hwservice)), drive the CWB capture through the HIDL
+# libdisplayconfig (vendor.display.config@2.0 -> composer), and allocate/map the
+# readback buffer via gralloc. The client is the fusion light engine
+# (libsensorserviceextimpl in system_server, via the system libcwb_client).
+type hal_cwb_host, domain;
+type hal_cwb_host_exec, exec_type, vendor_file_type, file_type;
+
+init_daemon_domain(hal_cwb_host)
+
+# Serve the CWB HIDL service.
+hwbinder_use(hal_cwb_host)
+add_hwservice(hal_cwb_host, hal_cwb_hwservice)
+
+# Drive the capture through libdisplayconfig (HIDL @2.0) -> composer, mirroring
+# the hal_configstore_default display-config client.
+allow hal_cwb_host vendor_hal_display_config_hwservice:hwservice_manager find;
+binder_call(hal_cwb_host, hal_graphics_composer_default)
+
+# Allocate/map the CWB readback buffer.
+hal_client_domain(hal_cwb_host, hal_graphics_allocator)
+allow hal_cwb_host hal_graphics_mapper_hwservice:hwservice_manager find;
+allow hal_cwb_host dmabuf_system_heap_device:chr_file r_file_perms;
+allow hal_cwb_host vendor_dmabuf_system_heap_device:chr_file r_file_perms;
+allow hal_cwb_host gpu_device:chr_file rw_file_perms;
+
+# Reads the CWB gate props (ro.vendor.oplus.display.cwb.*).
+get_prop(hal_cwb_host, vendor_default_prop)
+
+# dlopen of the stock vendor libs (libcwb_qcom.so, libhidlbase.so).
+allow hal_cwb_host vendor_file:file { r_file_perms execute map };

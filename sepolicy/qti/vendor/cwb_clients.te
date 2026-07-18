@@ -1,0 +1,10 @@
+# Clients of standalone cwb-host (HIDL ICwbService).
+# system_server: fusion light engine (libsensorserviceextimpl / libcwb_client)
+allow system_server hal_cwb_hwservice:hwservice_manager find;
+binder_call(system_server, hal_cwb_host)
+
+# libcwb_client probes AIDL CWB first (nothing serves it; find must not deny).
+allow system_server hal_oplus_cwb_aidl_service:service_manager find;
+
+# Composer may talk to cwb-host when coordinating capture.
+binder_call(hal_graphics_composer_default, hal_cwb_host)
