@@ -1,4 +1,46 @@
+# Pixelworks Iris feature HAL + irisConfig tool.
+# Service: odm/bin/hw/vendor.pixelworks.hardware.feature.irisfeature-service
+# Tool:    odm/bin/irisConfig
+#
+# IIrisFeature is under hal_irisfeature_hwservice (not composer) so this domain
+# can add_hwservice without the composer neverallow.
+
 type hal_feature_irisfeature_default, domain;
 
 type hal_feature_irisfeature_default_exec, exec_type, vendor_file_type, file_type;
 init_daemon_domain(hal_feature_irisfeature_default)
+
+# Serve vendor.pixelworks.hardware.feature@1.x::IIrisFeature (HIDL).
+hwbinder_use(hal_feature_irisfeature_default)
+add_hwservice(hal_feature_irisfeature_default, hal_irisfeature_hwservice)
+
+# Required to register with hwservicemanager (halserverdomain gets this via
+# typeattribute; we are a standalone domain so grant it explicitly).
+get_prop(hal_feature_irisfeature_default, hwservicemanager_prop)
+
+# Composer hosts IIris and talks to the feature HAL / shares display path.
+allow hal_graphics_composer_default hal_irisfeature_hwservice:hwservice_manager find;
+binder_call(hal_graphics_composer_default, hal_feature_irisfeature_default)
+binder_call(hal_feature_irisfeature_default, hal_graphics_composer_default)
+
+# Props used by stock iris stack.
+get_prop(hal_feature_irisfeature_default, system_oplus_iris_prop)
+set_prop(hal_feature_irisfeature_default, system_oplus_iris_prop)
+get_prop(hal_feature_irisfeature_default, system_oplus_project_prop)
+# IrisFeature reads display-related vendor props (post-flash AVC 2026-07-16).
+get_prop(hal_feature_irisfeature_default, vendor_display_prop)
+
+# Load ODM/vendor prebuilts (libpwiris*, HIDL stubs). ODM is vendor_file.
+allow hal_feature_irisfeature_default vendor_file:file { r_file_perms execute map };
+allow hal_feature_irisfeature_default vendor_file:dir r_dir_perms;
+allow hal_feature_irisfeature_default vendor_hal_file:file { r_file_perms execute map };
+allow hal_feature_irisfeature_default vendor_configs_file:file r_file_perms;
+allow hal_feature_irisfeature_default vendor_configs_file:dir r_dir_perms;
+
+# /sys/kernel/iris/chip_version (labeled generic sysfs) for IrisFeature::getFeatureFromSysFs.
+allow hal_feature_irisfeature_default sysfs:dir r_dir_perms;
+allow hal_feature_irisfeature_default sysfs:file r_file_perms;
+
+# graphics group in init rc.
+allow hal_feature_irisfeature_default gpu_device:chr_file rw_file_perms;
+allow hal_feature_irisfeature_default graphics_device:chr_file rw_file_perms;

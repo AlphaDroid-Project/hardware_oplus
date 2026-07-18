@@ -9,6 +9,7 @@
     osense_service
     system_fingerprint_prop
     system_oplus_iris_prop
+    system_oplus_memc_prop
     system_oplus_project_prop
     system_oplus_radio_prop
     system_oplus_touch_prop

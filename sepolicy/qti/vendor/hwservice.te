@@ -24,3 +24,7 @@ type vendor_hal_oplus_sensor_hwservice, hwservice_manager_type, protected_hwserv
 
 # CWB HIDL ICwbService — hosted by standalone cwb-host (not composer).
 type hal_cwb_hwservice, hwservice_manager_type;
+
+# Pixelworks Iris feature HAL (IIrisFeature). Own type so irisfeature-service
+# is not forced into the composer domain (composer neverallow).
+type hal_irisfeature_hwservice, hwservice_manager_type;
