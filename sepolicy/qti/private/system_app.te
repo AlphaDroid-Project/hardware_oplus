@@ -2,3 +2,5 @@
 set_prop(system_app, system_oplus_memc_prop)
 # DeviceSettings video MEMC: read the composer's fullscreen-video eligibility to pin the RR
 get_prop(system_app, system_oplus_video_memc_prop)
+# DeviceSettings Video Enhancement toggle: gate the composer's auto video MEMC
+set_prop(system_app, system_oplus_auto_memc_prop)

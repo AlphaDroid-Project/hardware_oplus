@@ -23,6 +23,7 @@ persist.oplus.display.vrr.adfr     u:object_r:exported_system_prop:s0
 persist.sys.display.iris.absent    u:object_r:system_oplus_iris_prop:s0
 sys.display.iris.memc_request      u:object_r:system_oplus_memc_prop:s0
 vendor.display.iris.video_memc     u:object_r:system_oplus_video_memc_prop:s0
+persist.sys.display.iris.auto_memc u:object_r:system_oplus_auto_memc_prop:s0
 ro.oplus.display.                  u:object_r:exported_system_prop:s0
 
 # Engineering
