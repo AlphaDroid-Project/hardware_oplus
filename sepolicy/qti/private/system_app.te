@@ -1,2 +1,4 @@
 # DeviceSettings game MEMC: irisConfigureSet(258) payload for the composer request engine
 set_prop(system_app, system_oplus_memc_prop)
+# DeviceSettings video MEMC: read the composer's fullscreen-video eligibility to pin the RR
+get_prop(system_app, system_oplus_video_memc_prop)

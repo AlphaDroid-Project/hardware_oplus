@@ -1,6 +1,7 @@
 # Display
 vendor_internal_prop(system_oplus_iris_prop)
 system_public_prop(system_oplus_memc_prop)
+vendor_public_prop(system_oplus_video_memc_prop)
 
 # Fingerprint
 vendor_restricted_prop(system_fingerprint_prop)
