@@ -3,7 +3,7 @@ cc_library_shared {
     vendor: true,
     srcs: [
         "effect.cpp",
-        "VibrationEffectLoader.cpp"
+        "VibrationEffectLoader.cpp",
     ],
     shared_libs: [
         "libbase",

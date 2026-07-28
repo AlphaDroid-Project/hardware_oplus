@@ -29,7 +29,7 @@
 
 #include "effect.h"
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(*(a)))
+#include <algorithm>
 
 #include <VibrationEffectConfig.h>
 
@@ -40,10 +40,12 @@ VibrationEffectLoader loader;
 };  // anonymous namespace
 
 const struct effect_stream* get_effect_stream(uint32_t effect_id) {
-    auto ret = loader.getEffectStream(effect_id);
-    if (ret) return ret;
-
+    // Prefer device-tuned built-in tables (AOSP-keyed). ODM JSON uses ColorOS
+    // IDs and must not shadow CLICK/DOUBLE_CLICK/etc.
     auto it = std::find_if(std::begin(effects), std::end(effects),
                            [&](auto&& v) { return v.effect_id == effect_id; });
-    return it != std::end(effects) ? &*it : nullptr;
+    if (it != std::end(effects)) return &*it;
+
+    // Optional fallback for extra ODM-defined IDs.
+    return loader.getEffectStream(effect_id);
 }
