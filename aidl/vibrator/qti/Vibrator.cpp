@@ -88,6 +88,64 @@ static inline bool hasEffectStream(Effect effect __attribute__((unused))) {
 #endif
 }
 
+/*
+ * Composition is served by sequencing ordinary effect streams: the kernel has
+ * no composite API of its own, and its DT primitive_N nodes on this family are
+ * unmodified QTI reference data (identical two-sample patterns at a period
+ * that does not match the LRA), so they are of no use here. A device opts in
+ * by shipping streams at EFFECT_STREAM_PRIMITIVE_BASE + <CompositePrimitive>.
+ */
+#define COMPOSE_SIZE_MAX 16
+#define COMPOSE_DELAY_MAX_MS 1000
+
+/*
+ * NOOP..LIGHT_TICK is the whole CompositePrimitive set in AIDL V1, which is
+ * what this service links against. LOW_TICK only exists from V2 onwards, so
+ * naming it here would not compile.
+ */
+static const CompositePrimitive kPrimitives[] = {
+        CompositePrimitive::NOOP,       CompositePrimitive::CLICK,
+        CompositePrimitive::THUD,       CompositePrimitive::SPIN,
+        CompositePrimitive::QUICK_RISE, CompositePrimitive::SLOW_RISE,
+        CompositePrimitive::QUICK_FALL, CompositePrimitive::LIGHT_TICK,
+};
+
+static inline int primitiveStreamId(CompositePrimitive primitive) {
+#ifdef USE_EFFECT_STREAM
+    return EFFECT_STREAM_PRIMITIVE_BASE + static_cast<int>(primitive);
+#else
+    (void)primitive;
+    return INVALID_VALUE;
+#endif
+}
+
+/* NOOP is a pure delay and needs no stream, so it is always playable. */
+static inline const struct effect_stream* primitiveStream(CompositePrimitive primitive) {
+#ifdef USE_EFFECT_STREAM
+    if (primitive == CompositePrimitive::NOOP) return nullptr;
+    return get_effect_stream(primitiveStreamId(primitive));
+#else
+    (void)primitive;
+    return nullptr;
+#endif
+}
+
+static inline bool hasPrimitive(CompositePrimitive primitive) {
+    return primitive == CompositePrimitive::NOOP || primitiveStream(primitive) != nullptr;
+}
+
+/* True only if at least one real primitive exists, i.e. more than NOOP. */
+static bool supportsCompose() {
+    for (const CompositePrimitive p : kPrimitives)
+        if (p != CompositePrimitive::NOOP && primitiveStream(p) != nullptr) return true;
+    return false;
+}
+
+static int32_t primitiveDurationMs(const struct effect_stream* stream) {
+    if (stream == nullptr || stream->play_rate_hz == 0) return 0;
+    return ((stream->length * 1000) / stream->play_rate_hz) + 1;
+}
+
 InputFFDevice::InputFFDevice() {
     DIR* dp;
     FILE* fp = NULL;
@@ -340,6 +398,22 @@ int InputFFDevice::playEffect(int effectId, EffectStrength es, long* playLengthM
     return play(effectId, INVALID_VALUE, playLengthMs);
 }
 
+/*
+ * Play a stream at an explicit 0.0-1.0 scale. The kernel derives the drive
+ * voltage straight from the magnitude carried on the effect
+ * (vmax = magnitude * fifo_vmax / 0x7fff), so the scale maps linearly.
+ */
+int InputFFDevice::playStream(int effectId, float scale, long* playLengthMs) {
+    if (scale < 0.0f)
+        scale = 0.0f;
+    else if (scale > 1.0f)
+        scale = 1.0f;
+
+    mCurrMagnitude = static_cast<int16_t>(scale * STRONG_MAGNITUDE);
+
+    return play(effectId, INVALID_VALUE, playLengthMs);
+}
+
 LedVibratorDevice::LedVibratorDevice() {
     char devicename[PATH_MAX];
     int fd;
@@ -438,6 +512,7 @@ ndk::ScopedAStatus Vibrator::getCapabilities(int32_t* _aidl_return) {
     if (ff.mSupportGain) *_aidl_return |= IVibrator::CAP_AMPLITUDE_CONTROL;
     if (ff.mSupportEffects) *_aidl_return |= IVibrator::CAP_PERFORM_CALLBACK;
     if (ff.mSupportExternalControl) *_aidl_return |= IVibrator::CAP_EXTERNAL_CONTROL;
+    if (supportsCompose()) *_aidl_return |= IVibrator::CAP_COMPOSE_EFFECTS;
 
     ALOGD("QTI Vibrator reporting capabilities: %d", *_aidl_return);
     return ndk::ScopedAStatus::ok();
@@ -447,6 +522,7 @@ ndk::ScopedAStatus Vibrator::off() {
     int ret;
 
     ALOGD("QTI Vibrator off");
+    mComposeId++;
     if (ledVib.mDetected)
         ret = ledVib.off();
     else
@@ -461,6 +537,7 @@ ndk::ScopedAStatus Vibrator::on(int32_t timeoutMs,
     int ret;
 
     ALOGD("Vibrator on for timeoutMs: %d", timeoutMs);
+    mComposeId++;
     if (ledVib.mDetected)
         ret = ledVib.on(timeoutMs);
     else
@@ -489,6 +566,7 @@ ndk::ScopedAStatus Vibrator::perform(Effect effect, EffectStrength es,
     int ret;
 
     ALOGD("Vibrator perform effect %d", effect);
+    mComposeId++;
 
     if (ledVib.mDetected) {
         switch (effect) {
@@ -619,27 +697,92 @@ ndk::ScopedAStatus Vibrator::setExternalControl(bool enabled) {
     return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Vibrator::getCompositionDelayMax(int32_t* maxDelayMs __unused) {
-    return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+ndk::ScopedAStatus Vibrator::getCompositionDelayMax(int32_t* maxDelayMs) {
+    if (ledVib.mDetected || !supportsCompose())
+        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+
+    *maxDelayMs = COMPOSE_DELAY_MAX_MS;
+    return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Vibrator::getCompositionSizeMax(int32_t* maxSize __unused) {
-    return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+ndk::ScopedAStatus Vibrator::getCompositionSizeMax(int32_t* maxSize) {
+    if (ledVib.mDetected || !supportsCompose())
+        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+
+    *maxSize = COMPOSE_SIZE_MAX;
+    return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Vibrator::getSupportedPrimitives(
-        std::vector<CompositePrimitive>* supported __unused) {
-    return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+ndk::ScopedAStatus Vibrator::getSupportedPrimitives(std::vector<CompositePrimitive>* supported) {
+    if (ledVib.mDetected || !supportsCompose())
+        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+
+    supported->clear();
+    for (const CompositePrimitive p : kPrimitives)
+        if (hasPrimitive(p)) supported->push_back(p);
+
+    return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Vibrator::getPrimitiveDuration(CompositePrimitive primitive __unused,
-                                                  int32_t* durationMs __unused) {
-    return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+ndk::ScopedAStatus Vibrator::getPrimitiveDuration(CompositePrimitive primitive,
+                                                  int32_t* durationMs) {
+    if (ledVib.mDetected || !supportsCompose())
+        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+
+    if (primitive == CompositePrimitive::NOOP) {
+        *durationMs = 0;
+        return ndk::ScopedAStatus::ok();
+    }
+
+    const struct effect_stream* stream = primitiveStream(primitive);
+    if (stream == nullptr)
+        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+
+    *durationMs = primitiveDurationMs(stream);
+    return ndk::ScopedAStatus::ok();
 }
 
-ndk::ScopedAStatus Vibrator::compose(const std::vector<CompositeEffect>& composite __unused,
-                                     const std::shared_ptr<IVibratorCallback>& callback __unused) {
-    return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+ndk::ScopedAStatus Vibrator::compose(const std::vector<CompositeEffect>& composite,
+                                     const std::shared_ptr<IVibratorCallback>& callback) {
+    if (ledVib.mDetected || !supportsCompose())
+        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+
+    if (composite.empty() || composite.size() > COMPOSE_SIZE_MAX)
+        return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_ILLEGAL_ARGUMENT));
+
+    /* Validate the whole sequence before playing any of it. */
+    for (const CompositeEffect& e : composite) {
+        if (e.delayMs < 0 || e.delayMs > COMPOSE_DELAY_MAX_MS)
+            return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_ILLEGAL_ARGUMENT));
+        if (e.scale < 0.0f || e.scale > 1.0f)
+            return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_ILLEGAL_ARGUMENT));
+        if (!hasPrimitive(e.primitive))
+            return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
+    }
+
+    const uint32_t generation = ++mComposeId;
+
+    std::thread([this, composite, callback, generation] {
+        for (const CompositeEffect& e : composite) {
+            if (mComposeId != generation) return;
+
+            if (e.delayMs > 0) usleep(e.delayMs * 1000);
+            if (e.primitive == CompositePrimitive::NOOP) continue;
+            if (mComposeId != generation) return;
+
+            long playLengthMs = 0;
+            if (ff.playStream(primitiveStreamId(e.primitive), e.scale, &playLengthMs) != 0) {
+                ALOGE("compose: failed to play primitive %d", static_cast<int>(e.primitive));
+                return;
+            }
+            if (playLengthMs > 0) usleep(playLengthMs * 1000);
+        }
+
+        /* Stay silent if something else took the motor while we were playing. */
+        if (mComposeId == generation && callback != nullptr) callback->onComplete();
+    }).detach();
+
+    return ndk::ScopedAStatus::ok();
 }
 
 ndk::ScopedAStatus Vibrator::getSupportedAlwaysOnEffects(

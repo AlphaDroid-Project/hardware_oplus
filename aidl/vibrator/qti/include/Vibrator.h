@@ -31,6 +31,8 @@
 
 #include <aidl/android/hardware/vibrator/BnVibrator.h>
 
+#include <atomic>
+
 namespace aidl {
 namespace android {
 namespace hardware {
@@ -40,6 +42,7 @@ class InputFFDevice {
   public:
     InputFFDevice();
     int playEffect(int effectId, EffectStrength es, long* playLengthMs);
+    int playStream(int effectId, float scale, long* playLengthMs);
     int on(int32_t timeoutMs);
     int off();
     int setAmplitude(uint8_t amplitude);
@@ -91,6 +94,14 @@ class Vibrator : public BnVibrator {
     ndk::ScopedAStatus getSupportedAlwaysOnEffects(std::vector<Effect>* _aidl_return) override;
     ndk::ScopedAStatus alwaysOnEnable(int32_t id, Effect effect, EffectStrength strength) override;
     ndk::ScopedAStatus alwaysOnDisable(int32_t id) override;
+
+  private:
+    /*
+     * Bumped by anything that takes over the motor. A compose() worker holds
+     * the value it started with and abandons the sequence as soon as it stops
+     * matching, so off()/on()/perform() cancel a composition in flight.
+     */
+    std::atomic<uint32_t> mComposeId{0};
 };
 
 }  // namespace vibrator

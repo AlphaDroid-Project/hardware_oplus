@@ -38,6 +38,18 @@ struct effect_stream {
     const int8_t* data;
 };
 
+/*
+ * Composition primitives are served from the same table as prebaked effects.
+ * AOSP Effect ids occupy 0..5 and 21 while CompositePrimitive ids occupy 0..8,
+ * so primitives are offset by this base to keep the two spaces apart. The
+ * kernel only uses effect_id for its "custom data <id> length <n>" log line,
+ * so the offset costs nothing and makes the log unambiguous.
+ *
+ * A device opts in to compose() purely by defining streams at these ids; the
+ * HAL advertises the capability only for primitives it can actually find.
+ */
+#define EFFECT_STREAM_PRIMITIVE_BASE 0x100
+
 const struct effect_stream* get_effect_stream(uint32_t effect_id);
 
 #endif
