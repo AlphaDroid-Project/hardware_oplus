@@ -74,6 +74,20 @@ namespace vibrator {
 
 #define LED_DEVICE "/sys/class/leds/vibrator"
 
+/*
+ * TEXTURE_TICK is outside the contiguous CLICK..HEAVY_CLICK range and is not
+ * defined by the kernel's built-in effect table, so it can only be played when
+ * the device ships an effect stream for it. Devices without one must not
+ * advertise it, or SystemUI's back-gesture threshold feedback goes silent.
+ */
+static inline bool hasEffectStream(Effect effect __attribute__((unused))) {
+#ifdef USE_EFFECT_STREAM
+    return get_effect_stream(static_cast<uint32_t>(effect)) != nullptr;
+#else
+    return false;
+#endif
+}
+
 InputFFDevice::InputFFDevice() {
     DIR* dp;
     FILE* fp = NULL;
@@ -526,7 +540,12 @@ ndk::ScopedAStatus Vibrator::perform(Effect effect, EffectStrength es,
         // Return magic value for play length so that we won't end up calling on() / off()
         playLengthMs = 150;
     } else {
-        if (effect < Effect::CLICK || effect > Effect::HEAVY_CLICK)
+        // AOSP CLICK..HEAVY_CLICK (0..5) plus TEXTURE_TICK (21) used by back-gesture
+        // threshold haptics. Pass enum value straight through — effect streams are
+        // AOSP-keyed (no ColorOS remap).
+        const bool known = (effect >= Effect::CLICK && effect <= Effect::HEAVY_CLICK) ||
+                           (effect == Effect::TEXTURE_TICK && hasEffectStream(effect));
+        if (!known)
             return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
 
         if (es != EffectStrength::LIGHT && es != EffectStrength::MEDIUM &&
@@ -557,6 +576,11 @@ ndk::ScopedAStatus Vibrator::getSupportedEffects(std::vector<Effect>* _aidl_retu
     } else {
         *_aidl_return = {Effect::CLICK, Effect::DOUBLE_CLICK, Effect::TICK,
                          Effect::THUD,  Effect::POP,          Effect::HEAVY_CLICK};
+        // Include TEXTURE_TICK so SystemUI back-gesture threshold feedback works
+        // (GESTURE_THRESHOLD_* → EFFECT_TEXTURE_TICK), but only where a stream
+        // for it exists — see hasEffectStream().
+        if (hasEffectStream(Effect::TEXTURE_TICK))
+            _aidl_return->push_back(Effect::TEXTURE_TICK);
     }
     return ndk::ScopedAStatus::ok();
 }
