@@ -618,11 +618,14 @@ ndk::ScopedAStatus Vibrator::perform(Effect effect, EffectStrength es,
         // Return magic value for play length so that we won't end up calling on() / off()
         playLengthMs = 150;
     } else {
-        // AOSP CLICK..HEAVY_CLICK (0..5) plus TEXTURE_TICK (21) used by back-gesture
-        // threshold haptics. Pass enum value straight through — effect streams are
-        // AOSP-keyed (no ColorOS remap).
-        const bool known = (effect >= Effect::CLICK && effect <= Effect::HEAVY_CLICK) ||
-                           (effect == Effect::TEXTURE_TICK && hasEffectStream(effect));
+        // AOSP-keyed streams (no ColorOS remap). CLICK..HEAVY_CLICK always;
+        // RINGTONE_1..15 and TEXTURE_TICK only when the device ships a stream
+        // (gated so salami/dodge without those arrays stay unchanged).
+        const bool known =
+                (effect >= Effect::CLICK && effect <= Effect::HEAVY_CLICK) ||
+                (effect >= Effect::RINGTONE_1 && effect <= Effect::RINGTONE_15 &&
+                 hasEffectStream(effect)) ||
+                (effect == Effect::TEXTURE_TICK && hasEffectStream(effect));
         if (!known)
             return ndk::ScopedAStatus(AStatus_fromExceptionCode(EX_UNSUPPORTED_OPERATION));
 
@@ -654,9 +657,21 @@ ndk::ScopedAStatus Vibrator::getSupportedEffects(std::vector<Effect>* _aidl_retu
     } else {
         *_aidl_return = {Effect::CLICK, Effect::DOUBLE_CLICK, Effect::TICK,
                          Effect::THUD,  Effect::POP,          Effect::HEAVY_CLICK};
-        // Include TEXTURE_TICK so SystemUI back-gesture threshold feedback works
-        // (GESTURE_THRESHOLD_* → EFFECT_TEXTURE_TICK), but only where a stream
-        // for it exists — see hasEffectStream().
+        // RINGTONE_1..15: long stock patterns (e.g. aston wf 41-45) for
+        // silent-mode / URI-mapped ring vibration via config_ringtoneEffectUris.
+        // Advertise only streams that actually exist.
+        static const Effect kRingtones[] = {
+                Effect::RINGTONE_1,  Effect::RINGTONE_2,  Effect::RINGTONE_3,
+                Effect::RINGTONE_4,  Effect::RINGTONE_5,  Effect::RINGTONE_6,
+                Effect::RINGTONE_7,  Effect::RINGTONE_8,  Effect::RINGTONE_9,
+                Effect::RINGTONE_10, Effect::RINGTONE_11, Effect::RINGTONE_12,
+                Effect::RINGTONE_13, Effect::RINGTONE_14, Effect::RINGTONE_15,
+        };
+        for (Effect r : kRingtones) {
+            if (hasEffectStream(r)) _aidl_return->push_back(r);
+        }
+        // TEXTURE_TICK: SystemUI back-gesture threshold feedback
+        // (GESTURE_THRESHOLD_* → EFFECT_TEXTURE_TICK).
         if (hasEffectStream(Effect::TEXTURE_TICK))
             _aidl_return->push_back(Effect::TEXTURE_TICK);
     }
