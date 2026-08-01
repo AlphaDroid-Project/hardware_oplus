@@ -44,8 +44,13 @@ ndk::ScopedAStatus TouchscreenGesture::getSupportedGestures(std::vector<Gesture>
 
 ndk::ScopedAStatus TouchscreenGesture::setGestureEnabled(const Gesture& gesture, bool enabled) {
     int contents = 0;
+    std::string tmp;
 
-    if (std::string tmp; mOplusTouch) {
+    // Read-modify-write on DOUBLE_TAP_INDEP_NODE. Must be synchronous: OneWay writes race with
+    // the next read when the client enables/disables several gestures in a loop (BootReceiver,
+    // post-ambient re-arm), which can drop bits. touchWriteNodeFile blocks until the node is
+    // updated so sequential RMWs compose correctly.
+    if (mOplusTouch) {
         mOplusTouch->touchReadNodeFile(OplusTouchConstants::DEFAULT_TP_IC_ID,
                                        OplusTouchConstants::DOUBLE_TAP_INDEP_NODE, &tmp);
         contents = std::stoi(tmp, nullptr, 16);
@@ -61,13 +66,17 @@ ndk::ScopedAStatus TouchscreenGesture::setGestureEnabled(const Gesture& gesture,
         contents &= ~(1 << (gesture.keycode - kGestureStartKey));
     }
 
+    const std::string contentsStr = std::to_string(contents);
     if (mOplusTouch) {
-        mOplusTouch->touchWriteNodeFileOneWay(OplusTouchConstants::DEFAULT_TP_IC_ID,
-                                              OplusTouchConstants::DOUBLE_TAP_ENABLE_NODE, "1");
-        mOplusTouch->touchWriteNodeFileOneWay(OplusTouchConstants::DEFAULT_TP_IC_ID,
-                                              OplusTouchConstants::DOUBLE_TAP_INDEP_NODE,
-                                              std::to_string(contents));
-    } else if (!WriteStringToFile(std::to_string(contents), kGestureEnableIndepPath, true)) {
+        // NDK AIDL out-arg is required (vendor int status).
+        int aidl_return = 0;
+        mOplusTouch->touchWriteNodeFile(OplusTouchConstants::DEFAULT_TP_IC_ID,
+                                        OplusTouchConstants::DOUBLE_TAP_ENABLE_NODE, "1",
+                                        &aidl_return);
+        mOplusTouch->touchWriteNodeFile(OplusTouchConstants::DEFAULT_TP_IC_ID,
+                                        OplusTouchConstants::DOUBLE_TAP_INDEP_NODE, contentsStr,
+                                        &aidl_return);
+    } else if (!WriteStringToFile(contentsStr, kGestureEnableIndepPath, true)) {
         return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
     }
 
