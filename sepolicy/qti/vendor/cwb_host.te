@@ -29,5 +29,9 @@ allow hal_cwb_host gpu_device:chr_file rw_file_perms;
 # Reads the CWB gate props (ro.vendor.oplus.display.cwb.*).
 get_prop(hal_cwb_host, vendor_default_prop)
 
+# /sys/kernel/oplus_display/power_status — the panel power transitions the
+# composer would otherwise notify CwbProxy about.
+r_dir_file(hal_cwb_host, vendor_sysfs_graphics)
+
 # dlopen of the stock vendor libs (libcwb_qcom.so, libhidlbase.so).
 allow hal_cwb_host vendor_file:file { r_file_perms execute map };
