@@ -80,6 +80,7 @@ int main() {
                 continue;
             }
             succeed = true;
+            LOG(INFO) << "setNrMode(" << mode << ") succeeded for SIM" << i;
             break;
         }
         if (!succeed) rc = EXIT_FAILURE;
